@@ -4,6 +4,8 @@ import torch
 import logging
 import os
 import uuid
+import librosa
+import numpy as np
 
 # Настраиваем логирование
 logging.basicConfig(
@@ -41,9 +43,13 @@ async def transcribe_audio(file: UploadFile = File(...)):
             buffer.write(content)
             logger.info(f"Файл сохранен, размер: {len(content)} байт")
         
+        # Загружаем аудио с помощью librosa
+        logger.info("Загружаю аудио файл...")
+        audio_data, sample_rate = librosa.load(temp_filename, sr=16000)
+        
         # Транскрибируем
         logger.info("Начинаю транскрибацию...")
-        result = pipe(temp_filename)
+        result = pipe(audio_data)
         logger.info("Транскрибация завершена успешно!")
         
         return {"text": result["text"]}
@@ -60,9 +66,4 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
 @app.get("/")
 async def root():
-    logger.info("Получен запрос на корневой эндпоинт")
     return {"message": "Транскрибатор работает!"}
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy", "model_loaded": True}
